@@ -59,6 +59,10 @@ use windows::{
 // TODO: graphics behaving funny when windows scale is 125%
 //       check ShowWindow options
 
+pub trait Data {
+    fn update(&mut self, raw_canvas: &mut dyn RawCanvas, input: &Input, dt: f64);
+}
+
 pub trait RawCanvas: IndexMut<usize, Output=u32> {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
@@ -106,9 +110,7 @@ impl Button {
     }
 }
 
-pub type Update = fn(data: &mut dyn Any, raw_canvas: &mut dyn RawCanvas, input: &Input, dt: f64);
-
-pub fn run(data: &mut dyn Any, update: Update) -> anyhow::Result<()> {
+pub fn run(data: &mut dyn Data) -> anyhow::Result<()> {
     let instance = unsafe { GetModuleHandleA(PCSTR::null()) }.context("GetModuleHandleA failed")?;
     if instance.is_invalid() {
         bail!("hinstance is invalid: {:?}", instance)
@@ -194,7 +196,7 @@ pub fn run(data: &mut dyn Any, update: Update) -> anyhow::Result<()> {
         let now = Instant::now();
         let elapsed = now.duration_since(time).as_secs_f64();
         time = now;
-        update(data, &mut bitmap, &input, elapsed);
+        data.update(&mut bitmap, &input, elapsed);
 
         let result = unsafe {
             StretchDIBits(
