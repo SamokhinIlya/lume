@@ -12,15 +12,7 @@ use windows::{
         Foundation::{HWND, WPARAM, LPARAM, LRESULT, RECT, GetLastError},
         System::LibraryLoader::GetModuleHandleA,
         UI::{
-            Input::KeyboardAndMouse::{
-                GetAsyncKeyState,
-                VIRTUAL_KEY,
-                VK_LBUTTON,
-                VK_RBUTTON,
-                VK_LEFT,
-                VK_RIGHT,
-                VK_DOWN,
-            },
+            Input::KeyboardAndMouse,
             WindowsAndMessaging::{
                 WNDCLASSA,
                 WINDOW_EX_STYLE,
@@ -86,6 +78,7 @@ pub struct Keyboard {
     pub left: Button,
     pub right: Button,
     pub down: Button,
+    pub up: Button,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -217,6 +210,8 @@ pub fn run(data: &mut dyn Data) -> anyhow::Result<()> {
 }
 
 fn gather_input(input: &mut Input) {
+    use KeyboardAndMouse::*;
+
     fn is_pressed(vk: VIRTUAL_KEY) -> bool {
         let result = unsafe { GetAsyncKeyState(vk.0.into()) };
         result != 0 && result < 0
@@ -228,6 +223,7 @@ fn gather_input(input: &mut Input) {
     input.keyboard.left.update(is_pressed(VK_LEFT));
     input.keyboard.right.update(is_pressed(VK_RIGHT));
     input.keyboard.down.update(is_pressed(VK_DOWN));
+    input.keyboard.up.update(is_pressed(VK_UP));
 }
 
 unsafe extern "system" fn win_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
