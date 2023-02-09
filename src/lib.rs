@@ -47,6 +47,8 @@ use windows::{
 // TODO: graphics behaving funny when windows scale is 125%
 //       check ShowWindow options
 
+pub type AnyhowResult = anyhow::Result<()>;
+
 pub trait Data {
     fn update(&mut self, raw_canvas: &mut dyn RawCanvas, input: &Input, dt: f64);
 }
@@ -99,7 +101,7 @@ impl Button {
     }
 }
 
-pub fn run(data: &mut dyn Data) -> anyhow::Result<()> {
+pub fn run(data: &mut dyn Data) -> AnyhowResult {
     let instance = unsafe { GetModuleHandleA(PCSTR::null()) }.context("GetModuleHandleA failed")?;
     if instance.is_invalid() {
         bail!("hinstance is invalid: {:?}", instance)
