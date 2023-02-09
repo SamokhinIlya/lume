@@ -1,11 +1,8 @@
-pub mod num_cast;
-
 use std::ops::IndexMut;
 use std::time::Instant;
 
-pub use num_cast::NumCast;
-
 use anyhow::{bail, Context};
+use num_traits::cast;
 use windows::{
     core::PCSTR,
     Win32::{
@@ -181,7 +178,7 @@ pub fn run(data: &mut dyn Data) -> anyhow::Result<()> {
         let window_height = client_rect.bottom - client_rect.top;
 
         if resize_bitmap {
-            bitmap.resize(window_width.num_cast(), window_height.num_cast()).context("bitmap.resize failed")?;
+            bitmap.resize(cast(window_width).unwrap(), cast(window_height).unwrap()).context("bitmap.resize failed")?;
             resize_bitmap = false;
         }
 
@@ -194,7 +191,7 @@ pub fn run(data: &mut dyn Data) -> anyhow::Result<()> {
             StretchDIBits(
                 device_context,
                 0, 0, window_width, window_height,
-                0, 0, bitmap.width.num_cast(), bitmap.height.num_cast(),
+                0, 0, cast(bitmap.width).unwrap(), cast(bitmap.height).unwrap(),
                 Some(bitmap.ptr as *const _),
                 &bitmap.info,
                 DIB_RGB_COLORS,
@@ -301,9 +298,9 @@ impl Bitmap {
             height,
             info: BITMAPINFO {
                 bmiHeader: BITMAPINFOHEADER {
-                    biSize: std::mem::size_of::<BITMAPINFOHEADER>().num_cast(),
-                    biWidth: width.num_cast::<i32>(),
-                    biHeight: -height.num_cast::<i32>(),
+                    biSize: cast(std::mem::size_of::<BITMAPINFOHEADER>()).unwrap(),
+                    biWidth: cast(width).unwrap(),
+                    biHeight: -cast::<_, i32>(height).unwrap(),
                     biPlanes: 1,
                     biBitCount: 32,
                     biCompression: BI_RGB as _,
@@ -331,8 +328,8 @@ impl Bitmap {
         self.ptr = ptr;
         self.width = width;
         self.height = height;
-        self.info.bmiHeader.biWidth = width.num_cast::<i32>();
-        self.info.bmiHeader.biHeight = -height.num_cast::<i32>();
+        self.info.bmiHeader.biWidth = cast(width).unwrap();
+        self.info.bmiHeader.biHeight = -cast::<_, i32>(height).unwrap();
         Ok(())
     }
 }
