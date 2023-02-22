@@ -187,7 +187,7 @@ pub fn run(data: &mut dyn Data) -> AnyhowResult {
         unsafe {
             let frame_time_ms = elapsed * 1000.0;
             let mut title = Vec::<u8>::new();
-            _ = write!(&mut title, "frame time: {frame_time_ms} ms\0");
+            _ = write!(&mut title, "frame time: {frame_time_ms:.3} ms\0");
 
             // TODO: check result
             SetWindowTextA(window, PCSTR(std::ffi::CStr::from_bytes_with_nul_unchecked(&title).as_ptr().cast()));
