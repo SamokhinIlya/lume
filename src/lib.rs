@@ -1,5 +1,6 @@
 use std::ops::IndexMut;
 use std::time::Instant;
+use std::io::Write;
 
 use anyhow::{bail, Context};
 use num_traits::cast;
@@ -166,12 +167,6 @@ pub fn run(data: &mut dyn Data) -> AnyhowResult {
         }
         gather_input(&mut input);
 
-        let title = std::ffi::CString::new(format!("cursor: {:?}", (input.mouse.x, input.mouse.y))).expect("input has nul byte");
-        unsafe {
-            // TODO: check result
-            SetWindowTextA(window, PCSTR(title.as_ptr().cast()));
-        }
-
         let mut client_rect = RECT::default();
         if !unsafe { GetClientRect(window, &mut client_rect) }.as_bool() {
             bail!("GetClientRect failed: GetLastError() -> {:?}", unsafe { GetLastError() })
@@ -188,6 +183,15 @@ pub fn run(data: &mut dyn Data) -> AnyhowResult {
         let elapsed = now.duration_since(time).as_secs_f64();
         time = now;
         data.update(&mut bitmap, &input, elapsed);
+
+        unsafe {
+            let frame_time_ms = elapsed * 1000.0;
+            let mut title = Vec::<u8>::new();
+            _ = write!(&mut title, "frame time: {frame_time_ms} ms\0");
+
+            // TODO: check result
+            SetWindowTextA(window, PCSTR(std::ffi::CStr::from_bytes_with_nul_unchecked(&title).as_ptr().cast()));
+        }
 
         let result = unsafe {
             StretchDIBits(
