@@ -1,4 +1,7 @@
-use std::ops::IndexMut;
+mod bitmap;
+
+use bitmap::Bitmap;
+
 use std::time::Instant;
 use std::io::Write;
 
@@ -41,22 +44,19 @@ use windows::{
                 HCURSOR, SetWindowTextA,
             },
         },
-        Graphics::Gdi::{GetDC, StretchDIBits, DIB_RGB_COLORS, SRCCOPY, BITMAPINFO, BITMAPINFOHEADER, BI_RGB},
+        Graphics::Gdi::{GetDC, StretchDIBits, DIB_RGB_COLORS, SRCCOPY},
     },
 };
 
 // TODO: graphics behaving funny when windows scale is 125%
 //       check ShowWindow options
 
+pub use bitmap::RawCanvas;
+
 pub type AnyhowResult = anyhow::Result<()>;
 
 pub trait Data {
     fn update(&mut self, raw_canvas: &mut dyn RawCanvas, input: &Input, dt: f64);
-}
-
-pub trait RawCanvas: IndexMut<usize, Output=u32> {
-    fn width(&self) -> usize;
-    fn height(&self) -> usize;
 }
 
 #[derive(Default, Debug)]
@@ -197,9 +197,9 @@ pub fn run(data: &mut dyn Data) -> AnyhowResult {
             StretchDIBits(
                 device_context,
                 0, 0, window_width, window_height,
-                0, 0, cast(bitmap.width).unwrap(), cast(bitmap.height).unwrap(),
-                Some(bitmap.ptr as *const _),
-                &bitmap.info,
+                0, 0, bitmap.width(), bitmap.height(),
+                bitmap.data(),
+                bitmap.info(),
                 DIB_RGB_COLORS,
                 SRCCOPY,
             )
@@ -245,97 +245,5 @@ unsafe extern "system" fn win_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam:
             LRESULT(0)
         },
         _ => DefWindowProcA(hwnd, msg, wparam, lparam)
-    }
-}
-
-type BitmapData = u32;
-
-struct Bitmap {
-    ptr: *mut BitmapData,
-    width: usize,
-    height: usize,
-    info: BITMAPINFO,
-}
-
-impl RawCanvas for Bitmap {
-    fn width(&self) -> usize {
-        self.width
-    }
-
-    fn height(&self) -> usize {
-        self.height
-    }
-}
-
-impl std::ops::Index<usize> for Bitmap {
-    type Output = BitmapData;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        let size = self.size();
-        assert!(index <= size, "index = {index}, size = {size}");
-
-        unsafe { &*self.ptr.add(index) }
-    }
-}
-
-impl std::ops::IndexMut<usize> for Bitmap {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        let size = self.size();
-        assert!(index <= size, "index = {index}, size = {size}");
-
-        unsafe { &mut *self.ptr.add(index) }
-    }
-}
-
-impl Bitmap {
-    fn with_size(width: usize, height: usize) -> Result<Self, std::alloc::LayoutError> {
-        use std::alloc::{alloc, Layout, handle_alloc_error};
-        use std::mem::{size_of, align_of};
-
-        let layout = Layout::from_size_align(width * height * size_of::<BitmapData>(), align_of::<BitmapData>())?;
-        let ptr: *mut BitmapData = unsafe { alloc(layout) }.cast();
-        if ptr.is_null() {
-            handle_alloc_error(layout);
-        }
-
-        Ok(Self {
-            ptr,
-            width,
-            height,
-            info: BITMAPINFO {
-                bmiHeader: BITMAPINFOHEADER {
-                    biSize: cast(std::mem::size_of::<BITMAPINFOHEADER>()).unwrap(),
-                    biWidth: cast(width).unwrap(),
-                    biHeight: -cast::<_, i32>(height).unwrap(),
-                    biPlanes: 1,
-                    biBitCount: 32,
-                    biCompression: BI_RGB as _,
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-        })
-    }
-
-    fn size(&self) -> usize {
-        self.width * self.height
-    }
-
-    fn resize(&mut self, width: usize, height: usize) -> Result<(), std::alloc::LayoutError> {
-        use std::alloc::{realloc, Layout, handle_alloc_error};
-        use std::mem::{size_of, align_of};
-
-        let layout = Layout::from_size_align(self.width * self.height * size_of::<BitmapData>(), align_of::<BitmapData>())?;
-        let ptr: *mut BitmapData = unsafe { realloc(self.ptr.cast(), layout, width * height * size_of::<BitmapData>()) }.cast();
-        if ptr.is_null() {
-            handle_alloc_error(layout);
-        }
-
-        self.ptr = ptr;
-        self.width = width;
-        self.height = height;
-        self.info.bmiHeader.biWidth = cast(width).unwrap();
-        self.info.bmiHeader.biHeight = -cast::<_, i32>(height).unwrap();
-        Ok(())
     }
 }
