@@ -5,6 +5,6 @@ jobs:
     name: "build"
     runs-on: windows-latest
     steps:
-      - run: ls
       - run: |
+          ls
           cargo build
