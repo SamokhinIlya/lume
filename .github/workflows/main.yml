@@ -8,10 +8,10 @@ jobs:
       - name: Set ls output
         id: ls
         run: |
-          echo "ls=$(ls)" >> $GITHUB_OUTPUT
+          echo "ls=`ls`" >> $GITHUB_OUTPUT
       - name: Show ls output
         run: |
-          echo "${{ steps.ls.outputs.ls }}"
+          echo "ls = ${{ steps.ls.outputs.ls }}"
       - run: |
           ls
           cargo build
