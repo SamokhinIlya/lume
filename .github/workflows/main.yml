@@ -5,13 +5,6 @@ jobs:
     name: "build"
     runs-on: windows-latest
     steps:
-      - name: Set ls output
-        id: ls
-        run: |
-          echo "ls=`ls`" >> $GITHUB_OUTPUT
-      - name: Show ls output
-        run: |
-          echo "ls = ${{ steps.ls.outputs.ls }}"
       - run: |
-          ls
+          echo "ls = $(ls)"
           cargo build
