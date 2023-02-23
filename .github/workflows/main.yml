@@ -1,0 +1,9 @@
+on: push
+
+jobs:
+  build:
+    name: "build"
+    runs-on: windows-latest
+    steps:
+      - run: |
+          cargo build
