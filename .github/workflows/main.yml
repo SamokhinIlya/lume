@@ -6,6 +6,5 @@ jobs:
     runs-on: windows-latest
     steps:
       - run: |
-          echo "ls = $(ls)"
-          shell
+          ls
           cargo build
