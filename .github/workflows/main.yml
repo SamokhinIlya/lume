@@ -5,6 +5,7 @@ jobs:
     name: "build"
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v3
       - run: |
           ls
           cargo build
