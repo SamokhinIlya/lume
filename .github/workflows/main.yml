@@ -2,10 +2,20 @@ on: push
 
 jobs:
   build:
-    name: "build"
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          ls
+      - name: build
+        run: |
+          cargo build
+      
+  build-dependants:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: SamokhinIlya/tetris-clone
+      - name: build
+        run: |
+          cd rust
           cargo build
