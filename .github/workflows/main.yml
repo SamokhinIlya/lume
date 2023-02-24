@@ -9,7 +9,7 @@ jobs:
         run: |
           cargo build
       
-  build-dependants:
+  build-tetris-clone:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
@@ -19,3 +19,14 @@ jobs:
         run: |
           cd rust
           cargo build
+      
+  build-mandelbrot:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: SamokhinIlya/mandelbrot
+      - name: build
+        run: |
+          cargo build
+          
